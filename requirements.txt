@@ -1,6 +1,6 @@
 Flask==2.3.2
 Flask-JWT-Extended==4.0.0
+flask-cors==4.0.2
 Werkzeug==2.3.3
 mysql-connector-python==8.0.33
 joblib==1.2.0
-flask-cors==3.1.1
