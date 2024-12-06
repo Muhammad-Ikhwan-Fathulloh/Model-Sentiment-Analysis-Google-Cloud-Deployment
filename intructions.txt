@@ -1,0 +1,5 @@
+pip show flask flask-jwt-extended flask-cors mysql-connector-python werkzeug joblib scikit-learn gunicorn numpy
+pip freeze
+
+docker build -t sentiment-analysis-app .
+docker run -p 8080:8080 sentiment-analysis-app

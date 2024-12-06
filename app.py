@@ -9,7 +9,6 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS
 
 # Konfigurasi Database
-# https://freedb.tech/
 DB_CONFIG = {
     'host': 'sql.freedb.tech',
     'user': 'freedb_learning_python',
@@ -23,7 +22,11 @@ jwt = JWTManager(app)
 
 # Fungsi untuk Membuat Koneksi ke Database
 def get_db_connection():
-    return mysql.connector.connect(**DB_CONFIG)
+    try:
+        return mysql.connector.connect(**DB_CONFIG)
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
 
 # Memuat model dan vectorizer
 try:
@@ -53,13 +56,15 @@ def register():
     hashed_password = generate_password_hash(password)
 
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return jsonify({"message": "User registered successfully"}), 201
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"message": "User registered successfully"}), 201
+    else:
+        return jsonify({"error": "Unable to connect to database"}), 500
 
 # Login dan Mendapatkan JWT
 @app.route('/login', methods=['POST'])
@@ -68,24 +73,31 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
 
-    if not user or not check_password_hash(user['password'], password):
-        return jsonify({"error": "Invalid username or password"}), 401
+        if not user or not check_password_hash(user['password'], password):
+            return jsonify({"error": "Invalid username or password"}), 401
 
-    # Generate JWT
-    access_token = create_access_token(identity={"username": user["username"]})
-    return jsonify({"access_token": access_token}), 200
+        # Generate JWT
+        access_token = create_access_token(identity=user["username"])
+        return jsonify({"access_token": access_token}), 200
+    else:
+        return jsonify({"error": "Unable to connect to database"}), 500
 
 # Endpoint untuk Prediksi Sentimen
 @app.route('/predict', methods=['POST'])
 @jwt_required()
 def predict_sentiment():
+    current_user = get_jwt_identity()
     if not model or not tfidf_vectorizer:
         return jsonify({"error": "Model or vectorizer not loaded"}), 500
 
@@ -95,11 +107,13 @@ def predict_sentiment():
     if not text:
         return jsonify({"error": "Text is required for prediction"}), 400
 
-    # Transform text menggunakan TF-IDF dan prediksi
-    text_tfidf = tfidf_vectorizer.transform([text])
-    prediction = model.predict(text_tfidf)
-
-    return jsonify({"text": text, "sentiment": prediction[0]}), 200
+    try:
+        # Transform text menggunakan TF-IDF dan prediksi
+        text_tfidf = tfidf_vectorizer.transform([text])
+        prediction = model.predict(text_tfidf)
+        return jsonify({"text": text, "sentiment": prediction[0]}), 200
+    except Exception as e:
+        return jsonify({"error": f"Error during prediction: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
