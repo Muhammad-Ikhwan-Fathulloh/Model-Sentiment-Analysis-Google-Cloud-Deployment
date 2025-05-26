@@ -11,8 +11,8 @@ CORS(app)  # Enable CORS
 # Konfigurasi Database
 DB_CONFIG = {
     'host': 'sql.freedb.tech',
-    'user': 'freedb_learning_python',
-    'password': 'juMk3s!N&U@ATqG',
+    'user': 'freedb_freedb_learning_python',
+    'password': 'KkP6?kBMQ8Tz6eu',
     'database': 'freedb_learning_python'
 }
 
