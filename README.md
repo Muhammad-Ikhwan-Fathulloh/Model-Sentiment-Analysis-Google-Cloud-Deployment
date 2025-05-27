@@ -39,6 +39,10 @@ numpy==1.23.5
 pip install -r requirements.txt
 ```
 
+## Deployment Strategis
+
+![Deployment Strategis](deployment-strategies.png)
+
 ## Deployment
 
 Instructions for running the model in docker
