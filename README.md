@@ -242,5 +242,3 @@ latest_model = minio_client.list_objects('models', prefix='sentiment_model')
 2. Selalu buat **backup model** sebelum update di MinIO.
 3. Terapkan **unit tests** untuk API sebelum deployment.
 4. Gunakan **health check endpoint** agar Cloud Run bisa memantau container.
-
-Apakah mau saya buatkan diagramnya juga?
